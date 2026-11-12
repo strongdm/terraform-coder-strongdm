@@ -19,9 +19,13 @@ module "strongdm" {
 
 ## How it works
 
-At every start the module downloads the pinned StrongDM CLI, checks it against the SHA-256 that StrongDM publishes for that release, and installs it with the coder CLI in `~/.local/bin`. It then runs `sdm listen` in the background. The listener gets the owner's token from Coder, exchanges it for a short StrongDM session and, unless `connect_all = false`, connects every resource the owner can use.
+At every start the module downloads the StrongDM CLI, checks it against the SHA-256 that StrongDM publishes for that release, and installs it with the coder CLI in `~/.local/bin`. It then runs `sdm listen` in the background. The listener gets the owner's token from Coder, exchanges it for a short StrongDM session and, unless `connect_all = false`, connects every resource the owner can use.
 
 If the owner unlinks StrongDM in Coder, or StrongDM refuses the token, the listener stops and waits until they link it again. Its log is `~/.coder-modules/strongdm/strongdm/logs/listen.log`.
+
+## CLI version
+
+The module installs StrongDM CLI 56.36.0, the first release that can sign in through Coder. Set `sdm_version` to pin another release, or to `"latest"` for StrongDM's current release. Each workspace looks the version up when it starts, so with `"latest"` it upgrades at its next start after StrongDM ships a release. Builds fail with a clear error if the release is older than 56.36.0.
 
 ## Examples
 

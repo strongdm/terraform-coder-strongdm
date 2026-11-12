@@ -176,6 +176,66 @@ run "unknown_release" {
   expect_failures = [data.http.sdm_cli]
 }
 
+run "latest_omits_version" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    sdm_version = "latest"
+  }
+
+  assert {
+    condition     = data.http.sdm_cli.url == "https://app.strongdm.com/release?software=sdm-cli&os=linux&arch=amd64"
+    error_message = "latest must ask the release endpoint without a version"
+  }
+}
+
+run "newer_release_accepted" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    sdm_version = "latest"
+  }
+
+  # 56.100.0 is newer than 56.36.0, though it sorts lower as text.
+  override_data {
+    target = data.http.sdm_cli
+    values = {
+      status_code   = 200
+      response_body = "{\"url\":\"https://downloads.strongdm.com/sdmcli_56.100.0_linux_amd64.zip\",\"version\":\"56.100.0\",\"sha256\":\"AB\"}"
+    }
+  }
+
+  assert {
+    condition     = resource.coder_env.strongdm["SDM_CLI_URL"].value == "https://downloads.strongdm.com/sdmcli_56.100.0_linux_amd64.zip"
+    error_message = "a release newer than the minimum must be installed"
+  }
+}
+
+run "release_too_old" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    sdm_version = "latest"
+  }
+
+  # StrongDM's current release when this module was written.
+  override_data {
+    target = data.http.sdm_cli
+    values = {
+      status_code   = 200
+      response_body = "{\"url\":\"https://downloads.strongdm.com/sdmcli_56.15.0_linux_amd64.zip\",\"version\":\"56.15.0\",\"sha256\":\"AB\"}"
+    }
+  }
+
+  expect_failures = [data.http.sdm_cli]
+}
+
 run "client_id_required" {
   command = plan
 
@@ -205,7 +265,7 @@ run "sdm_version_rejected" {
   variables {
     agent_id    = "foo"
     client_id   = "client-123"
-    sdm_version = "latest"
+    sdm_version = "newest"
   }
 
   expect_failures = [var.sdm_version]
