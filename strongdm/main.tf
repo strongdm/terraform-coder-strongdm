@@ -6,10 +6,6 @@ terraform {
       source  = "coder/coder"
       version = ">= 2.5"
     }
-    http = {
-      source  = "hashicorp/http"
-      version = ">= 3.4"
-    }
   }
 }
 
@@ -40,17 +36,6 @@ variable "sdm_version" {
   }
 }
 
-variable "arch" {
-  description = "CPU architecture of the workspace: amd64 or arm64."
-  type        = string
-  default     = "amd64"
-
-  validation {
-    condition     = contains(["amd64", "arm64"], var.arch)
-    error_message = "arch must be amd64 or arm64."
-  }
-}
-
 variable "sdm_app_domain" {
   description = "StrongDM control plane."
   type        = string
@@ -69,43 +54,12 @@ variable "connect_all" {
   default     = true
 }
 
-locals {
-  # Signing in through Coder (credential-source mode) needs this CLI or later.
-  sdm_min_version = "56.36.0"
-  # Each part padded to four digits, so versions compare as numbers: 56.36.0 is 5600360000.
-  sdm_min_version_number = tonumber(join("", [for p in split(".", local.sdm_min_version) : format("%04d", tonumber(p))]))
-  version_query          = var.sdm_version == "latest" ? "" : "&version=${var.sdm_version}"
-}
-
-# The zip's URL and checksum for this version, from StrongDM's release endpoint.
-data "http" "sdm_cli" {
-  url = "https://${var.sdm_app_domain}/release?software=sdm-cli&os=linux&arch=${var.arch}${local.version_query}"
-
-  lifecycle {
-    postcondition {
-      condition     = self.status_code == 200 && can(jsondecode(self.response_body).sha256)
-      error_message = "StrongDM has no Linux ${var.arch} CLI release ${var.sdm_version}."
-    }
-
-    postcondition {
-      condition = try(
-        tonumber(join("", [for p in split(".", jsondecode(self.response_body).version) : format("%04d", tonumber(p))])) >= local.sdm_min_version_number,
-        false
-      )
-      error_message = "StrongDM CLI ${try(jsondecode(self.response_body).version, "?")} can't sign in through Coder: it needs ${local.sdm_min_version} or later. Set sdm_version to ${local.sdm_min_version} or later."
-    }
-  }
-}
-
 data "coder_workspace" "me" {}
 
 locals {
-  sdm_cli = jsondecode(data.http.sdm_cli.response_body)
-
   # Settings for the scripts, and for sdm in every terminal.
   env = {
-    SDM_CLI_URL          = local.sdm_cli.url
-    SDM_CLI_SHA256       = lower(local.sdm_cli.sha256)
+    STRONGDM_CLI_VERSION = var.sdm_version
     SDM_APP_DOMAIN       = var.sdm_app_domain
     SDM_HOME             = "${var.home}/.sdm"
     SDM_CREDENTIAL_FILE  = "${var.home}/.config/strongdm/coder-source.json"

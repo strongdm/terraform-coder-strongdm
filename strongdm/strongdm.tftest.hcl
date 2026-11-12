@@ -1,12 +1,3 @@
-# StrongDM's release endpoint, as it answers for 56.36.0 on linux/amd64.
-override_data {
-  target = data.http.sdm_cli
-  values = {
-    status_code   = 200
-    response_body = "{\"url\":\"https://downloads.strongdm.com/builds/sdm-cli/56.36.0/linux-amd64/FF87F494D697544341974DF6A19CB983FC25CB15/sdmcli_56.36.0_linux_amd64.zip\",\"version\":\"56.36.0\",\"sha256\":\"6F850B2EA38E30B5AE4142AB33839772E8B7D1ABCB7B55A6773DDD3BAA804E20\",\"software\":\"sdm-cli\",\"os\":\"linux\",\"arch\":\"amd64\"}"
-  }
-}
-
 override_data {
   target = data.coder_workspace.me
   values = {
@@ -23,18 +14,8 @@ run "required_vars" {
   }
 
   assert {
-    condition     = data.http.sdm_cli.url == "https://app.strongdm.com/release?software=sdm-cli&os=linux&arch=amd64&version=56.36.0"
-    error_message = "the release lookup must default to 56.36.0 on linux/amd64 at app.strongdm.com"
-  }
-
-  assert {
-    condition     = resource.coder_env.strongdm["SDM_CLI_URL"].value == "https://downloads.strongdm.com/builds/sdm-cli/56.36.0/linux-amd64/FF87F494D697544341974DF6A19CB983FC25CB15/sdmcli_56.36.0_linux_amd64.zip"
-    error_message = "SDM_CLI_URL must come from the release endpoint"
-  }
-
-  assert {
-    condition     = resource.coder_env.strongdm["SDM_CLI_SHA256"].value == "6f850b2ea38e30b5ae4142ab33839772e8b7d1abcb7b55a6773ddd3baa804e20"
-    error_message = "SDM_CLI_SHA256 must be the endpoint's checksum in lower case, as sha256sum prints it"
+    condition     = resource.coder_env.strongdm["STRONGDM_CLI_VERSION"].value == "56.36.0"
+    error_message = "the CLI version must default to 56.36.0"
   }
 
   assert {
@@ -59,7 +40,7 @@ run "required_vars" {
 
   assert {
     condition     = resource.coder_env.strongdm["STRONGDM_LOG_DIR"].value == "/home/coder/.coder-modules/strongdm/strongdm/logs"
-    error_message = "logs must follow the registry's module data layout"
+    error_message = "logs must be under ~/.coder-modules/strongdm/strongdm"
   }
 
   assert {
@@ -73,7 +54,7 @@ run "required_vars" {
   }
 
   assert {
-    condition     = length(resource.coder_env.strongdm) == 9
+    condition     = length(resource.coder_env.strongdm) == 8
     error_message = "the module must set exactly the documented environment"
   }
 
@@ -118,16 +99,15 @@ run "custom_inputs" {
   variables {
     agent_id       = "foo"
     client_id      = "client-123"
-    sdm_version    = "56.40.1"
-    arch           = "arm64"
+    sdm_version    = "latest"
     sdm_app_domain = "app.uk.strongdm.com"
     home           = "/home/dev"
     connect_all    = false
   }
 
   assert {
-    condition     = data.http.sdm_cli.url == "https://app.uk.strongdm.com/release?software=sdm-cli&os=linux&arch=arm64&version=56.40.1"
-    error_message = "the release lookup must use sdm_app_domain, arch and sdm_version"
+    condition     = resource.coder_env.strongdm["STRONGDM_CLI_VERSION"].value == "latest"
+    error_message = "STRONGDM_CLI_VERSION must be sdm_version"
   }
 
   assert {
@@ -156,86 +136,6 @@ run "custom_inputs" {
   }
 }
 
-run "unknown_release" {
-  command = plan
-
-  variables {
-    agent_id    = "foo"
-    client_id   = "client-123"
-    sdm_version = "1.2.3"
-  }
-
-  override_data {
-    target = data.http.sdm_cli
-    values = {
-      status_code   = 404
-      response_body = "not found"
-    }
-  }
-
-  expect_failures = [data.http.sdm_cli]
-}
-
-run "latest_omits_version" {
-  command = plan
-
-  variables {
-    agent_id    = "foo"
-    client_id   = "client-123"
-    sdm_version = "latest"
-  }
-
-  assert {
-    condition     = data.http.sdm_cli.url == "https://app.strongdm.com/release?software=sdm-cli&os=linux&arch=amd64"
-    error_message = "latest must ask the release endpoint without a version"
-  }
-}
-
-run "newer_release_accepted" {
-  command = plan
-
-  variables {
-    agent_id    = "foo"
-    client_id   = "client-123"
-    sdm_version = "latest"
-  }
-
-  # 56.100.0 is newer than 56.36.0, though it sorts lower as text.
-  override_data {
-    target = data.http.sdm_cli
-    values = {
-      status_code   = 200
-      response_body = "{\"url\":\"https://downloads.strongdm.com/sdmcli_56.100.0_linux_amd64.zip\",\"version\":\"56.100.0\",\"sha256\":\"AB\"}"
-    }
-  }
-
-  assert {
-    condition     = resource.coder_env.strongdm["SDM_CLI_URL"].value == "https://downloads.strongdm.com/sdmcli_56.100.0_linux_amd64.zip"
-    error_message = "a release newer than the minimum must be installed"
-  }
-}
-
-run "release_too_old" {
-  command = plan
-
-  variables {
-    agent_id    = "foo"
-    client_id   = "client-123"
-    sdm_version = "latest"
-  }
-
-  # StrongDM's current release when this module was written.
-  override_data {
-    target = data.http.sdm_cli
-    values = {
-      status_code   = 200
-      response_body = "{\"url\":\"https://downloads.strongdm.com/sdmcli_56.15.0_linux_amd64.zip\",\"version\":\"56.15.0\",\"sha256\":\"AB\"}"
-    }
-  }
-
-  expect_failures = [data.http.sdm_cli]
-}
-
 run "client_id_required" {
   command = plan
 
@@ -245,18 +145,6 @@ run "client_id_required" {
   }
 
   expect_failures = [var.client_id]
-}
-
-run "arch_rejected" {
-  command = plan
-
-  variables {
-    agent_id  = "foo"
-    client_id = "client-123"
-    arch      = "386"
-  }
-
-  expect_failures = [var.arch]
 }
 
 run "sdm_version_rejected" {
