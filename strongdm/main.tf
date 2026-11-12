@@ -126,7 +126,7 @@ resource "coder_env" "strongdm" {
 
 resource "coder_script" "install" {
   agent_id           = var.agent_id
-  display_name       = "StrongDM CLI"
+  display_name       = "StrongDM CLI Install"
   icon               = "/icon/database.svg"
   run_on_start       = true
   start_blocks_login = true
@@ -135,7 +135,7 @@ resource "coder_script" "install" {
 
 resource "coder_script" "listen" {
   agent_id     = var.agent_id
-  display_name = "StrongDM listener"
+  display_name = "StrongDM Listener"
   icon         = "/icon/database.svg"
   run_on_start = true
   script       = file("${path.module}/scripts/sdm-listen.sh")
