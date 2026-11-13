@@ -5,7 +5,7 @@ Install the [StrongDM](https://www.strongdm.com) CLI in a workspace and sign it 
 ```hcl
 module "strongdm" {
   count     = data.coder_workspace.me.start_count
-  source    = "git::https://github.com/<org>/<repo>//strongdm?ref=v0.1.0"
+  source    = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.1.0"
   agent_id  = coder_agent.main.id
   client_id = "..."
 }
@@ -34,7 +34,7 @@ The module installs StrongDM CLI 56.36.0, the first release that can sign in thr
 ```hcl
 module "strongdm" {
   count       = data.coder_workspace.me.start_count
-  source      = "git::https://github.com/<org>/<repo>//strongdm?ref=v0.1.0"
+  source      = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.1.0"
   agent_id    = coder_agent.main.id
   client_id   = "..."
   sdm_version = "56.36.0"
@@ -46,7 +46,7 @@ module "strongdm" {
 ```hcl
 module "strongdm" {
   count       = data.coder_workspace.me.start_count
-  source      = "git::https://github.com/<org>/<repo>//strongdm?ref=v0.1.0"
+  source      = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.1.0"
   agent_id    = coder_agent.main.id
   client_id   = "..."
   connect_all = false
