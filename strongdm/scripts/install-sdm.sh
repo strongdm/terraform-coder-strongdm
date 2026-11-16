@@ -78,7 +78,7 @@ cat > "$SDM_CREDENTIAL_FILE.new" << EOF
   "client_id": "$STRONGDM_CLIENT_ID",
   "executable": {
     "command": "$bin/coder",
-    "args": ["external-auth", "access-token", "strongdm", "--output", "json"],
+    "args": ["external-auth", "access-token", "$STRONGDM_PROVIDER_ID", "--output", "json"],
     "timeout_seconds": 10
   },
   "format": {

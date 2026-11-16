@@ -14,7 +14,7 @@ log() { echo "$(date -Is) $*"; }
 # A fingerprint of the owner's token, empty when StrongDM isn't linked.
 # The token itself is a bearer credential and is never printed.
 token_id() {
-  token=$(coder external-auth access-token strongdm --output json 2> /dev/null) \
+  token=$(coder external-auth access-token "$STRONGDM_PROVIDER_ID" --output json 2> /dev/null) \
     && printf '%s' "$token" | sha256sum | cut -c1-16
 }
 

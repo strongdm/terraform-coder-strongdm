@@ -31,6 +31,8 @@ https://<your Coder access URL>/external-auth/strongdm/callback
 
 StrongDM gives you a client ID, a client secret, and authorize, token and revoke URLs.
 
+The `strongdm` in the callback URL is the provider ID. Keep it unless this Coder server connects to more than one StrongDM organization; see [Several StrongDM organizations](#several-strongdm-organizations).
+
 ### 2. Add StrongDM to Coder
 
 Set these on the Coder server and restart it. Use the next free index if you already have external auth providers.
@@ -47,7 +49,7 @@ CODER_EXTERNAL_AUTH_0_REVOKE_URL=<revoke URL>
 CODER_EXTERNAL_AUTH_0_PKCE_METHODS=S256
 ```
 
-The ID must be `strongdm`: the module asks Coder for the token by that name. Keep the client secret in your secret store. Only the Coder server needs it.
+The ID must match the module's `provider_id`, which defaults to `strongdm`, and the provider ID in the callback URL you gave StrongDM: the module asks Coder for the token by that name. Keep the client secret in your secret store. Only the Coder server needs it.
 
 ### 3. Add the module to your template
 
@@ -60,13 +62,33 @@ module "strongdm" {
 }
 ```
 
-`client_id` is the same client ID as in step 2. It identifies the integration and is not a secret.
+`client_id` is the same client ID as in step 2. It identifies the integration and is not a secret. If you used a provider ID other than `strongdm`, also set `provider_id` to it.
 
 If the workspace user's home isn't `/home/coder`, set `home`. Then push the template.
 
 ### 4. Link StrongDM
 
 Each developer links StrongDM once, under **Account > External Authentication** in Coder. Workspaces that start before they link wait, and sign in as soon as they do.
+
+### Several StrongDM organizations
+
+A workspace connects to one StrongDM organization: the one its template names. To serve more than one organization from the same Coder server:
+
+1. Create one Coder integration per organization in StrongDM. Give each its own provider ID in the callback URL, for example `/external-auth/strongdm-prod/callback` and `/external-auth/strongdm-staging/callback`.
+2. Add one external auth provider per integration on the Coder server, each with its own index, ID and client ID.
+3. Give each template the matching values:
+
+```hcl
+module "strongdm" {
+  count       = data.coder_workspace.me.start_count
+  source      = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.1.0"
+  agent_id    = coder_agent.main.id
+  client_id   = "<client ID of that organization's integration>"
+  provider_id = "strongdm-prod"
+}
+```
+
+Provider IDs are 1–32 letters or digits separated by single hyphens, and cannot be `new` or `create`. Each ID must be unique across all of the Coder server's external auth providers.
 
 ## Check that it works
 
@@ -84,6 +106,7 @@ It lists the resources the developer can use, with the local port each one is co
 | ---------------- | -------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `agent_id`       | required             | The Coder agent to install into.                                                                                |
 | `client_id`      | required             | Client ID of the StrongDM Coder integration.                                                                    |
+| `provider_id`    | `"strongdm"`         | ID of the StrongDM external auth provider on the Coder server, as in `CODER_EXTERNAL_AUTH_<n>_ID`.               |
 | `sdm_version`    | `"56.36.0"`          | StrongDM CLI release to install, or `"latest"`.                                                                 |
 | `sdm_app_domain` | `"app.strongdm.com"` | StrongDM control plane.                                                                                         |
 | `home`           | `"/home/coder"`      | Home directory of the workspace user.                                                                           |
@@ -104,7 +127,7 @@ Errors from the install appear in the **Install StrongDM CLI** step of the works
 | `StrongDM CLI … can't sign in through Coder: it needs 56.36.0 or later` | StrongDM's current release is older than 56.36.0. Set `sdm_version = "56.36.0"`.                                               |
 | `StrongDM has no Linux … CLI release …`                                 | `sdm_version` isn't a StrongDM release. Check the number.                                                                      |
 | `StrongDM has no Linux CLI for …`                                       | The workspace isn't amd64 or arm64.                                                                                            |
-| `waiting for StrongDM to be linked in Coder` in the log                 | The owner hasn't linked StrongDM, or their link was revoked. They link it under **Account > External Authentication**.         |
+| `waiting for StrongDM to be linked in Coder` in the log                 | The owner hasn't linked StrongDM, or their link was revoked. They link it under **Account > External Authentication**. If nobody can link it, check that `provider_id` matches the provider's ID on the Coder server. |
 | `curl` errors during install                                            | The workspace can't reach `app.strongdm.com`, `downloads.strongdm.com` or the Coder access URL.                                |
 | `sdm: command not found`                                                | Open a new terminal. The module adds `~/.local/bin` to `PATH` in `~/.bashrc`; other shells need it added to their own profile. |
 
