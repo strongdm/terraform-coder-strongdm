@@ -56,7 +56,7 @@ data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
 locals {
-  name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}"
+  name = "coder-${data.coder_workspace.me.id}"
   labels = {
     "app.kubernetes.io/name" = "coder-workspace"
     "com.coder.workspace.id" = data.coder_workspace.me.id
@@ -115,6 +115,9 @@ resource "kubernetes_deployment_v1" "workspace" {
         labels = local.labels
       }
       spec {
+        node_selector = {
+          "kubernetes.io/arch" = data.coder_provisioner.me.arch
+        }
         security_context {
           run_as_user = 1000
         }
