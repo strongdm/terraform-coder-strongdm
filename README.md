@@ -16,6 +16,7 @@ If StrongDM refuses the owner's token, for example after they unlink StrongDM in
 
 - StrongDM's Coder integration for your organization.
 - Access to your Coder server's configuration, to add StrongDM as an external auth provider.
+- Terraform 1.9 or later in the Coder provisioner.
 - Linux amd64 or arm64 workspaces with `curl`, `unzip`, `sha256sum`, `sed` and `awk`. Many minimal images lack `unzip`.
 - A home directory owned by the workspace user and not writable by others. The StrongDM CLI refuses to read its credential file from a world-writable home, which some volume provisioners create.
 - Network access from workspaces to `app.strongdm.com`, `downloads.strongdm.com` and your Coder access URL.
