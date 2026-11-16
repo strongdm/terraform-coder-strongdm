@@ -58,9 +58,8 @@ data "coder_workspace_owner" "me" {}
 locals {
   name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}"
   labels = {
-    "app.kubernetes.io/name"     = "coder-workspace"
-    "app.kubernetes.io/instance" = local.name
-    "com.coder.workspace.id"     = data.coder_workspace.me.id
+    "app.kubernetes.io/name" = "coder-workspace"
+    "com.coder.workspace.id" = data.coder_workspace.me.id
   }
 }
 
@@ -80,7 +79,7 @@ module "strongdm" {
 
 resource "kubernetes_persistent_volume_claim_v1" "home" {
   metadata {
-    name      = "${local.name}-home"
+    name      = "coder-${data.coder_workspace.me.id}-home"
     namespace = var.namespace
     labels    = local.labels
   }

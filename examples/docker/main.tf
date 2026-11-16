@@ -76,13 +76,9 @@ resource "docker_container" "workspace" {
   name       = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}"
   image      = docker_image.workspace.image_id
   hostname   = data.coder_workspace.me.name
-  entrypoint = ["sh", "-c", replace(coder_agent.main.init_script, "/localhost|127\\.0\\.0\\.1/", "host.docker.internal")]
+  entrypoint = ["sh", "-c", coder_agent.main.init_script]
   env        = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"]
 
-  host {
-    host = "host.docker.internal"
-    ip   = "host-gateway"
-  }
   volumes {
     container_path = "/home/coder"
     volume_name    = docker_volume.home.name

@@ -23,4 +23,6 @@ Change whatever your environment needs: the base image and the tools in it, reso
 3. Each developer links StrongDM under **Account > External Authentication**, then creates a workspace from the template.
 4. In the workspace terminal, `sdm status` lists the resources they can use.
 
-The Docker provider in `main.tf` uses the Docker socket of the machine that runs the Coder provisioner. The container reaches the Coder server through `host.docker.internal`, which suits a Coder server on the same host. If your Coder access URL is reachable from workspaces, delete the `replace(...)` around `init_script` and the `host` block.
+The Docker provider in `main.tf` uses the Docker socket of the machine that runs the Coder provisioner.
+
+The Coder access URL must be reachable from inside the workspace container. The agent and the StrongDM module both download from it, so a `localhost` or `127.0.0.1` access URL does not work.
