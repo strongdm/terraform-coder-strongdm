@@ -17,6 +17,7 @@ If StrongDM refuses the owner's token, for example after they unlink StrongDM in
 - StrongDM's Coder integration for your organization.
 - Access to your Coder server's configuration, to add StrongDM as an external auth provider.
 - Linux amd64 or arm64 workspaces with `curl`, `unzip`, `sha256sum`, `sed` and `awk`. Many minimal images lack `unzip`.
+- A home directory owned by the workspace user and not writable by others. The StrongDM CLI refuses to read its credential file from a world-writable home, which some volume provisioners create.
 - Network access from workspaces to `app.strongdm.com`, `downloads.strongdm.com` and your Coder access URL.
 
 ## Setup
@@ -39,7 +40,7 @@ Set these on the Coder server and restart it. Use the next free index if you alr
 
 ```bash
 CODER_EXTERNAL_AUTH_0_ID=strongdm
-CODER_EXTERNAL_AUTH_0_TYPE=strongdm
+CODER_EXTERNAL_AUTH_0_TYPE=custom
 CODER_EXTERNAL_AUTH_0_DISPLAY_NAME=StrongDM
 CODER_EXTERNAL_AUTH_0_CLIENT_ID=<client ID>
 CODER_EXTERNAL_AUTH_0_CLIENT_SECRET=<client secret>
@@ -56,7 +57,7 @@ The ID must match the module's `provider_id`, which defaults to `strongdm`, and 
 ```hcl
 module "strongdm" {
   count     = data.coder_workspace.me.start_count
-  source    = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.1.0"
+  source    = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.2.0"
   agent_id  = coder_agent.main.id
   client_id = "<client ID>"
 }
@@ -65,6 +66,8 @@ module "strongdm" {
 `client_id` is the same client ID as in step 2. It identifies the integration and is not a secret. If you used a provider ID other than `strongdm`, also set `provider_id` to it.
 
 If the workspace user's home isn't `/home/coder`, set `home`. Then push the template.
+
+Starting from scratch? [`examples/docker`](examples/docker) and [`examples/kubernetes`](examples/kubernetes) are complete templates, each with a Dockerfile, to copy and adapt.
 
 ### 4. Link StrongDM
 
@@ -81,7 +84,7 @@ A workspace connects to one StrongDM organization: the one its template names. T
 ```hcl
 module "strongdm" {
   count       = data.coder_workspace.me.start_count
-  source      = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.1.0"
+  source      = "git::https://github.com/strongdm/terraform-coder-strongdm//strongdm?ref=v0.2.0"
   agent_id    = coder_agent.main.id
   client_id   = "<client ID of that organization's integration>"
   provider_id = "strongdm-prod"
