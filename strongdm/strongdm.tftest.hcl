@@ -54,7 +54,12 @@ run "required_vars" {
   }
 
   assert {
-    condition     = length(resource.coder_env.strongdm) == 8
+    condition     = resource.coder_env.strongdm["STRONGDM_PROVIDER_ID"].value == "strongdm"
+    error_message = "the provider ID must default to strongdm"
+  }
+
+  assert {
+    condition     = length(resource.coder_env.strongdm) == 9
     error_message = "the module must set exactly the documented environment"
   }
 
@@ -83,6 +88,16 @@ run "scripts" {
   }
 
   assert {
+    condition     = strcontains(file("${path.module}/scripts/install-sdm.sh"), "\"$STRONGDM_PROVIDER_ID\"") && !strcontains(file("${path.module}/scripts/install-sdm.sh"), "access-token\", \"strongdm\"")
+    error_message = "the credential source must use the configured provider ID, not a fixed one"
+  }
+
+  assert {
+    condition     = strcontains(file("${path.module}/scripts/sdm-listen.sh"), "access-token \"$STRONGDM_PROVIDER_ID\"") && !strcontains(file("${path.module}/scripts/sdm-listen.sh"), "access-token strongdm")
+    error_message = "the listener must use the configured provider ID, not a fixed one"
+  }
+
+  assert {
     condition     = resource.coder_script.listen.script == file("${path.module}/scripts/sdm-listen.sh")
     error_message = "the listener script must be scripts/sdm-listen.sh"
   }
@@ -103,6 +118,12 @@ run "custom_inputs" {
     sdm_app_domain = "app.uk.strongdm.com"
     home           = "/home/dev"
     connect_all    = false
+    provider_id    = "strongdm-qa"
+  }
+
+  assert {
+    condition     = resource.coder_env.strongdm["STRONGDM_PROVIDER_ID"].value == "strongdm-qa"
+    error_message = "STRONGDM_PROVIDER_ID must be provider_id"
   }
 
   assert {
@@ -157,4 +178,52 @@ run "sdm_version_rejected" {
   }
 
   expect_failures = [var.sdm_version]
+}
+
+run "provider_id_with_underscore_rejected" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    provider_id = "strongdm_qa"
+  }
+
+  expect_failures = [var.provider_id]
+}
+
+run "provider_id_reserved_rejected" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    provider_id = "create"
+  }
+
+  expect_failures = [var.provider_id]
+}
+
+run "provider_id_too_long_rejected" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    provider_id = "abcdefghijklmnopqrstuvwxyz0123456"
+  }
+
+  expect_failures = [var.provider_id]
+}
+
+run "provider_id_with_double_hyphen_rejected" {
+  command = plan
+
+  variables {
+    agent_id    = "foo"
+    client_id   = "client-123"
+    provider_id = "strongdm--qa"
+  }
+
+  expect_failures = [var.provider_id]
 }

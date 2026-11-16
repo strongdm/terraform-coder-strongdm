@@ -24,6 +24,22 @@ variable "client_id" {
   }
 }
 
+variable "provider_id" {
+  description = "ID of the StrongDM external auth provider on the Coder server: the <id> in /external-auth/<id>/callback and in CODER_EXTERNAL_AUTH_<n>_ID."
+  type        = string
+  default     = "strongdm"
+
+  # The rules Coder applies to external auth provider IDs.
+  validation {
+    condition = (
+      can(regex("^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$", var.provider_id))
+      && length(var.provider_id) <= 32
+      && !contains(["new", "create"], var.provider_id)
+    )
+    error_message = "provider_id must be 1-32 ASCII letters or digits separated by single hyphens, and cannot be new or create."
+  }
+}
+
 # Pinned until StrongDM's current release reaches 56.36.0, then "latest".
 variable "sdm_version" {
   description = "StrongDM CLI version to install, or \"latest\" for StrongDM's current release. Signing in through Coder needs 56.36.0 or later."
@@ -64,6 +80,7 @@ locals {
     SDM_HOME             = "${var.home}/.sdm"
     SDM_CREDENTIAL_FILE  = "${var.home}/.config/strongdm/coder-source.json"
     STRONGDM_CLIENT_ID   = var.client_id
+    STRONGDM_PROVIDER_ID = var.provider_id
     STRONGDM_CONNECT_ALL = tostring(var.connect_all)
     STRONGDM_LOG_DIR     = "${var.home}/.coder-modules/strongdm/strongdm/logs"
     CODER_AGENT_URL      = data.coder_workspace.me.access_url
