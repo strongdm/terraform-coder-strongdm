@@ -26,6 +26,8 @@ Change whatever your cluster needs: the image, resource requests and limits, the
 
 The default image, `codercom/example-base:ubuntu`, has the module's requirements. To use your own, build the `Dockerfile`, push it to a registry your cluster can pull from, and set `--variable image=<your image>`.
 
+Workspaces run on nodes with the same architecture as the Coder provisioner, because the agent binary is built for it. To run on a different architecture, change `arch` in the `coder_agent` and the Pod's `node_selector` together.
+
 An init container makes `/home/coder` owned by the workspace user and not writable by others. Many volume provisioners create it as `root`, writable by everyone, and the StrongDM CLI refuses to read its credential file from a home directory like that. Keep the init container, or make sure your volumes have the same ownership.
 
 The provider uses the credentials of the Coder provisioner's service account. To use a kubeconfig instead, set `config_path` in the `kubernetes` provider block.

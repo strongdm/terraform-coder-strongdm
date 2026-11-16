@@ -73,7 +73,7 @@ resource "docker_volume" "home" {
 
 resource "docker_container" "workspace" {
   count      = data.coder_workspace.me.start_count
-  name       = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}"
+  name       = "coder-${data.coder_workspace.me.id}"
   image      = docker_image.workspace.image_id
   hostname   = data.coder_workspace.me.name
   entrypoint = ["sh", "-c", coder_agent.main.init_script]
